@@ -76,7 +76,7 @@ module.exports = function (robot, web = webClient) {
   }
   const formatAmountToUsd = (amount) => {
     if (parseInt(amount)) {
-      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0, currencyDisplay: 'code' }).format(amount)
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2, currencyDisplay: 'code' }).format(amount)
     }
     return 'US$0'
   }
