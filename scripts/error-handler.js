@@ -39,8 +39,14 @@ module.exports = robot => {
         Raven.setContext(context)
       }
     }
-    const room = process.env.SENTRY_CHANNEL || '#random'
-    robot.send({ room: room }, `${prefix}An error has occurred: \`${err.message}\``)
+    const room = process.env.SENTRY_CHANNEL || '#huemul-devs'
+
+    const fileName = err.stack.split(' at')[1]
+
+    robot.send({ room: room }, `
+      script name: ${fileName}
+      ${prefix}An error has occurred: \`${err.message}\`
+    `)
     Raven.captureException(err)
   })
 }
