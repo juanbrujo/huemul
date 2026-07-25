@@ -1,6 +1,5 @@
 // Description:
-//   Obtiene info del tiempo desde donde el usuario haga la consulta, la manda
-//   a Wttr.in y muestra el resultado en Slack.
+//   Obtiene info del tiempo desde wttr.in y muestra solo las condiciones actuales.
 //
 // Dependencies:
 //   None
@@ -17,24 +16,26 @@ module.exports = robot => {
     const defaultCity = 'Santiago, Chile'
     let city = msg.match[2].trim() || defaultCity
 
-    // Si ciudad ingresada es S|santiago, retorna a: Santiago, Chile
     city = city.toLowerCase() === 'santiago' ? defaultCity : city
 
     robot
-      .http(`http://wttr.in/${city}?m`)
+      .http(`https://wttr.in/${encodeURIComponent(city)}?m&T`)
       .header('Accept', '*/*')
       .header('User-Agent', 'curl/7.43.0')
       .get()((err, res, body) => {
-        if (err || res.statusCode !== 200 || body === 'ERROR' || /sorry/gi.test(body)) {
+        if (err || res.statusCode !== 200 || !body || /sorry/gi.test(body)) {
           if (err) robot.emit('error', err, msg, 'tiempo')
           return msg.reply('ocurrió un error con la búsqueda')
         }
-        const raw = body.split('\n')
-        const idx = raw.findIndex(el => /\s+┌─────────────┐\s+/.test(el))
-        const result = raw
-          .slice(0, idx)
-          .map(text => text.replace(/\[(\d+)?((;\d+)+)?(m)?/g, ''))
+
+        const lines = body.split('\n')
+        // Cortar justo antes de las tablas de forecast
+        const forecastIdx = lines.findIndex(line => line.includes('┌─────────────┐'))
+        const result = (forecastIdx === -1 ? lines : lines.slice(0, forecastIdx))
           .join('\n')
+          .replace(/\x1b\[[0-9;]*m/g, '')  // limpiar códigos ANSI por si acaso
+          .trimEnd()
+
         msg.send('```' + result + '```')
       })
   })
